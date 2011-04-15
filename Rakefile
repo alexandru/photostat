@@ -11,7 +11,7 @@ spec = Gem::Specification.new do |s|
 
   s.author = "Alexandru Nedelcu"
   s.email = "me@alexn.org"
-
+  s.homepage = "https://github.com/alexandru/FlickrCLI"
   s.executables = ["bin/flickr"]
   s.default_executable = "bin/flickr"
 
