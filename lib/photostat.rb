@@ -3,9 +3,9 @@ require 'ostruct'
 module Photostat
   VERSION = '0.1'
 
-  class ArgumentError(Exception); end
-  class ArgumentRequiredError(ArgumentError); end
-  class ArgumentInvalidError(ArgumentError); end
+  class ArgumentError < Exception; end
+  class ArgumentRequiredError < ArgumentError; end
+  class ArgumentInvalidError < ArgumentRequiredError; end
 
   #  Describes the interface any Photostat command module must
   #  implement.
@@ -15,11 +15,11 @@ module Photostat
 
     #  Used as a summary specification of the command, to be displayed
     #  in the main help output
-    attr-accessor :help_summary
+    attr_accessor :help_summary
 
     #  To be displayed in the help output of this specific command (on
     #  "photostat help <command-name>")
-    attr-accessor :help_description
+    attr_accessor :help_description
 
     # 
     #  call-seq:
@@ -77,7 +77,7 @@ module Photostat
           :name => name,
           :short_version => short_version,
           :long_version => long_version,
-          :is_required => is_required and is_required != :optional,
+          :is_required => is_required && is_required != :optional,
           :type => [:bool, :value],
           :description => description,
           :process => block_given? ? process : nil,

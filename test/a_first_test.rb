@@ -12,7 +12,7 @@ describe Photostat do
 
   describe "when no params are given" do
     it "should give me an error with available commands" do
-      Photostat.run
+      Photostat.run([])
     end
   end
 end
