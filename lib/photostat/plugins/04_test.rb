@@ -3,8 +3,12 @@ module Photostat
   class Test < Plugins::Base
     help_text "Tests the plugins system"
     exposes :config, "Tests if configuration is OK"
+    exposes :hello,  'Says hello (plugin testing)'
 
     def config
+      # for --help basically
+      Trollop::options do; end
+
       has_errors = false
       puts
 
@@ -27,6 +31,17 @@ module Photostat
 
       puts
     end
+
+    def hello
+      opts = Trollop::options do
+        opt :name, "Your name", :required => true, :type => :string
+      end
+
+      puts
+      puts "Hello " + (opts[:name] || "Anonymous") + "!"
+      puts
+    end
+
   end
 
 end

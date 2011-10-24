@@ -1,9 +1,12 @@
+require "benchmark"
 require "pathname"
 require "yaml"
 require "logger"
-require "escape"
 require "exifr"
 require 'fileutils'
+require "escape"
+require 'logger'
+require 'trollop'
 
 require "photostat/version"
 require "photostat/osutils"
@@ -57,6 +60,7 @@ module Photostat
     puts "Getting help for a particular command:: photostat <command> --help"
     puts
     puts "Available plugins:"
+
     Photostat::Plugins.all.each_key do |cmd_name|      
       cmd_obj = Photostat::Plugins.all[cmd_name]
       help_text = "#{cmd_name}"
@@ -86,3 +90,5 @@ Photostat.root.join('plugins').children.sort.each do |plugin_path|
   next unless plugin_path.to_s =~ /.rb$/
   require plugin_path.to_s
 end
+
+

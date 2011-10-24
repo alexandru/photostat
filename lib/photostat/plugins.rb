@@ -1,7 +1,3 @@
-require 'logger'
-require 'ruby-debug'
-require 'trollop'
-
 module Photostat
   
   module Plugins

@@ -18,9 +18,8 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  # specify any dependencies here; for example:
-  # only works for Ruby 1.9.2
-  # s.add_development_dependency 'ruby-debug19'
+  s.add_development_dependency "bundler"
+
   s.add_runtime_dependency "nokogiri"
   s.add_runtime_dependency 'sqlite3'
   s.add_runtime_dependency 'activerecord', '3.1.0'
@@ -28,4 +27,6 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "escape"
   s.add_runtime_dependency "flickraw"
   s.add_runtime_dependency "exifr"
+  s.add_runtime_dependency "escape"
+  s.add_runtime_dependency "json"
 end
