@@ -14,7 +14,7 @@ module Photostat
         opt :path, "Local path to import", :required => true, :type => :string, :short => "-p"
         opt :tags, "List of tags to classify imported pictures", :type => :strings
         opt :visibility, "Choices are 'private', 'protected' and 'public'", :required => true, :type => :string
-        opt :move, "Move, instead of copy (better performance, defaults to false)", :type => :boolean
+        opt :move, "Move, instead of copy (better performance, defaults to false, careful)", :type => :boolean
       end
 
       Trollop::die :path, "must be a valid directory" unless File.directory? opts[:path]
