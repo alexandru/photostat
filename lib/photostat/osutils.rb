@@ -46,5 +46,49 @@ module Photostat
       end
       return out
     end    
+
+    def files_in_dir(dir, options=nil)
+      files = []
+      dirs  = []
+      dir = File.expand_path dir
+      current = dir
+
+      return [] unless File.directory? current
+
+      match = options[:match] if options
+      not_match = options[:not_match] if options
+      non_recursive = options[:non_recursive]
+      is_abs = options[:absolute?] or false
+
+      while current        
+        Dir.entries(current).each do |name|
+          next unless name != '.' and name != '..'
+          path = File.join(current, name)
+
+          valid = true
+          valid = path =~ match if match and valid
+          valid = path !~ not_match if not_match and valid
+
+          if valid
+            rpath = path[dir.length+1,path.length]
+            yielded = is_abs ? File.join(dir, rpath) : rpath
+            files.push yielded
+            yield yielded if block_given?
+          end
+
+          dirs.push path if !non_recursive and File.directory? path 
+        end
+
+        current = dirs.pop
+      end
+
+      files
+    end
+
+    def file_md5(file)
+      out = exec "md5sum", file
+      out =~ /^(\S+)/
+      $1.strip
+    end
   end
 end

@@ -1,6 +1,9 @@
 require "pathname"
 require "yaml"
 require "logger"
+require "escape"
+require "exifr"
+require 'fileutils'
 
 require "photostat/version"
 require "photostat/osutils"
@@ -13,8 +16,7 @@ module Photostat
 
   def self.config
     unless @config
-      STDERR.puts "Error: must Photostat.activate!"
-      exit 1
+      @config = YAML.load(File.read(File.expand_path "~/.photostat"))
     end
     @config
   end

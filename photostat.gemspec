@@ -27,4 +27,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "trollop"
   s.add_runtime_dependency "escape"
   s.add_runtime_dependency "flickraw"
+  s.add_runtime_dependency "exifr"
 end
