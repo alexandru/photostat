@@ -21,7 +21,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency "bundler"
   s.add_development_dependency "rake"
 
-  s.add_runtime_dependency "ruby-debug19"
   s.add_runtime_dependency "nokogiri"
   s.add_runtime_dependency 'sqlite3'
   s.add_runtime_dependency "trollop"
@@ -30,4 +29,9 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "exifr"
   s.add_runtime_dependency "escape"
   s.add_runtime_dependency "json"
+
+  s.add_runtime_dependency "rack"
+  s.add_runtime_dependency "thin"
+  s.add_runtime_dependency "RubyInline"
+  s.add_runtime_dependency "image_science"
 end

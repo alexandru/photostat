@@ -15,6 +15,15 @@ module Photostat
       @plugins
     end
 
+    def self.load_all!
+      # loads all available plugins
+      Photostat.root.join('plugins').children.sort.each do |plugin_path|
+        next if File.directory? plugin_path
+        next unless plugin_path.to_s =~ /\/\d+_\w+.rb$/
+        require plugin_path.to_s
+      end
+    end
+
     class Base
       def self.help_text(msg=nil)
         @help_text = msg if msg

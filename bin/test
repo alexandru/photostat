@@ -1,6 +1,0 @@
-#!/usr/bin/env ruby
-
-require "photostat"
-require "photostat/db/base"
-
-Photostat::DB.migrate!

@@ -1,4 +1,3 @@
-require 'ruby-debug'
 require 'sequel'
 
 module Photostat
@@ -6,7 +5,7 @@ module Photostat
     def self.instance
       unless @DB
         config = Photostat.config
-        path = File.join(config[:repository_path], 'photostat.db')
+        path = File.join(config[:repository_path], 'system', 'photostat.db')
         @DB = Sequel.sqlite(path)
       end
       return @DB

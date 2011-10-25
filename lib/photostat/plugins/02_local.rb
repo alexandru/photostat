@@ -8,70 +8,55 @@ module Photostat
 
     exposes :config, "Configures your local database, repository path and Flickr login"
     exposes :import, "Imports images from a directory path (recursively) to your Photostat repository"
-    exposes :rebuild_db, "In case you deleted your database, this command rebuilds it, populating it with photos from your repository"
+    exposes :thumbs, "Generates thumbs (needed by the web interface)"
 
     def activate!
+      require "image_science"
       unless @activated
-        require "photostat/db/base"
         @db = Photostat::DB.instance
         Photostat::DB.migrate!
         @activated = true
       end
     end
 
-    def rebuild_db
-      interrupted = false
-      trap("INT") { interrupted = true }
+    def thumbs
+      activate!
 
-      opts = Trollop::options do
-        opt :tags, "List of tags to classify missing pictures", :type => :strings
-        opt :visibility, "Choices are 'private', 'protected' and 'public'", :required => true, :type => :string
-      end
-
-      Trollop::die :visibility, "is invalid. Choices are: private, protected and public" unless ['private', 'protected', 'public'].member? opts[:visibility]
-      opts[:tags] ||= []
-
-      activate!      
-
+      opts = Trollop::options do; end
       config = Photostat.config
-      repo = config [:repository_path]
-      puts
+      repo = Pathname.new config[:repository_path]
+
+      p100 = repo.join('system', 'thumbs', '100')
+      p800 = repo.join('system', 'thumbs', '800')     
+      mkdir_p p100.to_s
+      mkdir_p p800.to_s
+
       count = 0
-
-      all_files = files_in_dir(repo, :match => /\d{4}\d{2}\d{2}\d{2}\d{2}[-]\w{6}[.](jpe?g|JPE?G)$/, :absolute? => false) do |path|
-        break if interrupted
-        count += 1
-        STDOUT.print "\r - building list of files: #{count}"
-        STDOUT.flush
-      end
-
-      if interrupted
-        puts
-        puts " - interrupted by user" 
-        puts
-        exit 0
-      end
-
+      total = @db[:photos].count
       puts
-      count, total = 0, all_files.length
 
-      all_files.each do |fpath|
-        break if interrupted
+      @db[:photos].each do |photo|
         count += 1
-        STDOUT.print "\r - processed: #{count} / #{total}"
+        STDOUT.write "\r - processed thumbnails for images: #{count} / #{total}"
         STDOUT.flush
-        update_photo(repo, fpath, opts)
-      end
+        
+        t100 = p100.join(photo[:local_path]).to_s
+        t800 = p800.join(photo[:local_path]).to_s
+        next if File.exists?(t100) and File.exists?(t800)
 
-      if interrupted
-        puts
-        puts " - interrupted by user" 
-        puts
-        exit 0
-      end
+        abs_path = repo.join(photo[:local_path]).to_s
+        ImageScience.with_image(abs_path) do |img|
+          mkdir_p File.dirname(t100)
+          img.cropped_thumbnail(100) do |thumb|
+            thumb.save t100
+          end
 
-      puts if count
-      puts if count
+          mkdir_p File.dirname(t800)
+          img.thumbnail(800) do |thumb|
+            thumb.save t800
+          end
+        end
+      end
     end
 
     def import
@@ -143,8 +128,9 @@ module Photostat
       config = YAML::load(File.read config_file) if File.exists? config_file
 
       config[:repository_path] ||= "~/Photos"
-      config[:repository_path] = input("Wanted location for your Photostat repository", 
-                              :dir? => true, :default => config[:repository_path])
+      config[:repository_path] = input(
+        "Wanted location for your Photostat repository", 
+        :dir? => true, :default => config[:repository_path])
       config[:repository_path] = File.expand_path(config[:repository_path])
 
       puts

@@ -1,0 +1,6 @@
+
+<div id="photos">
+  <% for photo in @photos %>
+  <img src="/photos/<%= photo[:local_path] %>" height="100" />    
+  <% end %>
+</div>

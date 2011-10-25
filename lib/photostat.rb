@@ -8,11 +8,13 @@ require "escape"
 require 'logger'
 require 'trollop'
 
-require "photostat/version"
 require "photostat/osutils"
-require "photostat/plugins"
+require "photostat/plugins/base"
+require "photostat/db/base"
 
 module Photostat
+  VERSION = "0.0.1"
+
   def self.root
     Pathname.new File.join(File.dirname(__FILE__), 'photostat')
   end
@@ -84,11 +86,4 @@ module Photostat
   end
 end
 
-# including all available plugins
-Photostat.root.join('plugins').children.sort.each do |plugin_path|
-  next if File.directory? plugin_path
-  next unless plugin_path.to_s =~ /.rb$/
-  require plugin_path.to_s
-end
-
-
+Photostat::Plugins.load_all!
