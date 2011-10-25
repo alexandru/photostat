@@ -8,6 +8,71 @@ module Photostat
 
     exposes :config, "Configures your local database, repository path and Flickr login"
     exposes :import, "Imports images from a directory path (recursively) to your Photostat repository"
+    exposes :rebuild_db, "In case you deleted your database, this command rebuilds it, populating it with photos from your repository"
+
+    def activate!
+      unless @activated
+        require "photostat/db/base"
+        @db = Photostat::DB.instance
+        Photostat::DB.migrate!
+        @activated = true
+      end
+    end
+
+    def rebuild_db
+      interrupted = false
+      trap("INT") { interrupted = true }
+
+      opts = Trollop::options do
+        opt :tags, "List of tags to classify missing pictures", :type => :strings
+        opt :visibility, "Choices are 'private', 'protected' and 'public'", :required => true, :type => :string
+      end
+
+      Trollop::die :visibility, "is invalid. Choices are: private, protected and public" unless ['private', 'protected', 'public'].member? opts[:visibility]
+      opts[:tags] ||= []
+
+      activate!      
+
+      config = Photostat.config
+      repo = config [:repository_path]
+      puts
+      count = 0
+
+      all_files = files_in_dir(repo, :match => /\d{4}\d{2}\d{2}\d{2}\d{2}[-]\w{6}[.](jpe?g|JPE?G)$/, :absolute? => false) do |path|
+        break if interrupted
+        count += 1
+        STDOUT.print "\r - building list of files: #{count}"
+        STDOUT.flush
+      end
+
+      if interrupted
+        puts
+        puts " - interrupted by user" 
+        puts
+        exit 0
+      end
+
+      puts
+      count, total = 0, all_files.length
+
+      all_files.each do |fpath|
+        break if interrupted
+        count += 1
+        STDOUT.print "\r - processed: #{count} / #{total}"
+        STDOUT.flush
+        update_photo(repo, fpath, opts)
+      end
+
+      if interrupted
+        puts
+        puts " - interrupted by user" 
+        puts
+        exit 0
+      end
+
+      puts if count
+      puts if count
+    end
 
     def import
       opts = Trollop::options do
@@ -30,7 +95,11 @@ module Photostat
       count, total = 0, files.length
       puts
 
+      interrupted = false
+      trap("INT") { interrupted = true }
+
       files.each do |fpath|        
+        break if interrupted
         count += 1
 
         STDOUT.print "\r - processed: #{count} / #{total}"
@@ -49,46 +118,21 @@ module Photostat
         cp fpath, dest_path unless opts[:move]
         mv fpath, dest_path if opts[:move]
         
-        photo = Photostat::Photo.find_or_create_by_local_path(local_path)
-        photo.exif = exif
-        photo.md5 = md5
-        photo.visibility = opts[:visibility]
-        photo.save
+        update_photo(config[:repository_path], local_path, opts, md5, exif)
+      end
 
-        opts[:tags].each do |name|
-          next if photo.tags.where(:name => name).first
-          photo.tags << Tag.new(:name => name)
-        end
+      if !files or files.length == 0
+        puts " - nothing to do"
       end
       
-      puts
-      puts
-    end
-
-    def activate!
-      require "active_record"
-      @config = YAML::load File.read(File.expand_path "~/.photostat")
-      @repo = Pathname.new @config[:repository_path]
-
-      unless File.directory? @repo.join('system').to_s
-        Dir.mkdir @repo.join('system').to_s
-        Dir.mkdir @repo.join('system', 'logs').to_s
+      if interrupted
+        puts
+        puts " - interrupted by user" 
+        puts
+        exit 0
       end
 
-      @db_config = YAML::load File.read(Photostat.root.join('db', 'config.yml').to_s)
-      @db_config[:database] = @repo.join('system', 'photostat.db').to_s
-
-      # creating database, establishing connection
-      ActiveRecord::Base.logger = Logger.new(@repo.join('system', 'logs', 'db.log').to_s)
-      ActiveRecord::Base.establish_connection(@db_config)
-
-      # doing migrations
-      migrations_path = Photostat.root.join('db').to_s
-      ActiveRecord::Migration.verbose = false
-      ActiveRecord::Migrator.migrate(migrations_path)
-
-      # extra includes
-      require "photostat/db/models"
+      puts
     end
 
     def config
@@ -114,12 +158,41 @@ module Photostat
         puts " >>>> generated ~/.photostat config"
       end  
 
-      db_exists = File.exists? File.join(config[:repository_path], 'system', 'photostat.db')
-      activate!
-      puts " >>>> database created" unless db_exists
-
       puts
     end
+
+  private
+
+    def update_photo(repo, fpath, opts=nil, md5=nil, exif=nil)
+      opts ||= {}
+      md5 = nil
+
+      photo = @db[:photos].where(:local_path => fpath).first
+      photo_id = photo ? photo[:id] : nil
+
+      raise "do not use absolute paths in the database" if fpath =~ /^\//
+
+      unless photo
+        abs_fpath = File.join(repo, fpath)
+        md5 = file_md5 abs_fpath unless md5
+
+        exif = EXIFR::JPEG.new abs_fpath unless exif
+        return unless exif.date_time
+
+        photo_id = @db[:photos].insert(
+          :local_path => fpath,
+          :md5 => md5,
+          :visibility => opts[:visibility],
+          :created_at => exif.date_time
+        )
+      end        
+
+      opts[:tags].each do |name|         
+        next unless @db[:tags].where(:name => name, :photo_id => photo_id).empty?
+        @db[:tags].insert(:name => name, :photo_id => photo_id)
+      end
+    end      
+
   end
 
 end

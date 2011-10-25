@@ -21,9 +21,9 @@ Gem::Specification.new do |s|
   s.add_development_dependency "bundler"
   s.add_development_dependency "rake"
 
+  s.add_runtime_dependency "ruby-debug19"
   s.add_runtime_dependency "nokogiri"
   s.add_runtime_dependency 'sqlite3'
-  s.add_runtime_dependency 'activerecord', '3.1.0'
   s.add_runtime_dependency "trollop"
   s.add_runtime_dependency "escape"
   s.add_runtime_dependency "flickraw"

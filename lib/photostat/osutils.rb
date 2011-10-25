@@ -1,3 +1,5 @@
+require 'digest/md5'
+
 module Photostat
   module OSUtils
     def input(msg, options=nil)
@@ -86,9 +88,7 @@ module Photostat
     end
 
     def file_md5(file)
-      out = exec "md5sum", file
-      out =~ /^(\S+)/
-      $1.strip
+      Digest::MD5.file(file).hexdigest
     end
   end
 end
