@@ -1,7 +1,8 @@
 Photostat
 =========
 
-For managing photos, like a hacker.
+For managing photos, like a hacker. It is already usable for me, but
+work is still in progress and I don't recommend it to people yet.
 
 Here's what this app currently does:
 
