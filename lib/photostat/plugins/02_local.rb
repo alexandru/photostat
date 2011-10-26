@@ -26,10 +26,8 @@ module Photostat
       config = Photostat.config
       repo = Pathname.new config[:repository_path]
 
-      p100 = repo.join('system', 'thumbs', '100')
-      p800 = repo.join('system', 'thumbs', '800')     
-      mkdir_p p100.to_s
-      mkdir_p p800.to_s
+      p200 = repo.join('system', 'thumbs', '200')
+      mkdir_p p200.to_s
 
       count = 0
       total = @db[:photos].count
@@ -40,20 +38,14 @@ module Photostat
         STDOUT.write "\r - processed thumbnails for images: #{count} / #{total}"
         STDOUT.flush
         
-        t100 = p100.join(photo[:local_path]).to_s
-        t800 = p800.join(photo[:local_path]).to_s
-        next if File.exists?(t100) and File.exists?(t800)
+        t200 = p200.join(photo[:local_path]).to_s
+        next if File.exists?(t200)
 
         abs_path = repo.join(photo[:local_path]).to_s
         ImageScience.with_image(abs_path) do |img|
-          mkdir_p File.dirname(t100)
-          img.cropped_thumbnail(100) do |thumb|
-            thumb.save t100
-          end
-
-          mkdir_p File.dirname(t800)
-          img.thumbnail(800) do |thumb|
-            thumb.save t800
+          mkdir_p File.dirname(t200)
+          img.cropped_thumbnail(200) do |thumb|
+            thumb.save t200
           end
         end
       end
