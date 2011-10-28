@@ -90,5 +90,15 @@ module Photostat
     def file_md5(file)
       Digest::MD5.file(file).hexdigest
     end
+
+    def partial_file_md5(file)
+      digest = Digest::MD5.new
+      digest << IO.read(file, 61440)
+      digest.hexdigest
+    end
+
+    def string_md5(string)
+      Digest::MD5.hexdigest(string)
+    end
   end
 end

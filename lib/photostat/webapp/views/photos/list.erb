@@ -1,7 +1,0 @@
-<div id="photos">
-  <% for photo in @photos %>
-    <a href="/<%= photo[:id] %>/">
-       <img src="/photos/system/thumbs/200/<%= photo[:local_path] %>" width="200" height="200" alt="<%= photo[:created_at] %>" title="<%= photo[:created_at] %>" />    
-    </a>
-  <% end %>
-</div>

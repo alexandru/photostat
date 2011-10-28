@@ -20,6 +20,7 @@ module Photostat
       Photostat.root.join('plugins').children.sort.each do |plugin_path|
         next if File.directory? plugin_path
         next unless plugin_path.to_s =~ /\/\d+_\w+.rb$/
+        next unless File.basename(plugin_path) != '00_base.rb'
         require plugin_path.to_s
       end
     end

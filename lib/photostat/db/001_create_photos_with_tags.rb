@@ -2,14 +2,20 @@ Sequel.migration do
   up do
     create_table :photos do
       primary_key :id
+      
+      String :uid, :null => false
+      String :type, :null => false
 
       String :local_path, :null => false
-      String :md5, :null => false
       String :visibility, :null => false
       DateTime :created_at, :null => false      
 
-      index :local_path, :unique => true
-      index :md5, :unique => true
+      String :md5, :null => true
+
+      index :uid, :unique => true
+      index :local_path
+      index :type
+      index :md5
     end
 
     create_table :tags do

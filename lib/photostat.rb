@@ -8,9 +8,9 @@ require "escape"
 require 'logger'
 require 'trollop'
 
-require "photostat/osutils"
-require "photostat/plugins/base"
+require "photostat/utils/os"
 require "photostat/db/base"
+require "photostat/plugins/00_base"
 
 module Photostat
   VERSION = "0.0.1"

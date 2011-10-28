@@ -8,46 +8,12 @@ module Photostat
 
     exposes :config, "Configures your local database, repository path and Flickr login"
     exposes :import, "Imports images from a directory path (recursively) to your Photostat repository"
-    exposes :thumbs, "Generates thumbs (needed by the web interface)"
 
     def activate!
-      require "image_science"
       unless @activated
         @db = Photostat::DB.instance
         Photostat::DB.migrate!
         @activated = true
-      end
-    end
-
-    def thumbs
-      activate!
-
-      opts = Trollop::options do; end
-      config = Photostat.config
-      repo = Pathname.new config[:repository_path]
-
-      p200 = repo.join('system', 'thumbs', '200')
-      mkdir_p p200.to_s
-
-      count = 0
-      total = @db[:photos].count
-      puts
-
-      @db[:photos].each do |photo|
-        count += 1
-        STDOUT.write "\r - processed thumbnails for images: #{count} / #{total}"
-        STDOUT.flush
-        
-        t200 = p200.join(photo[:local_path]).to_s
-        next if File.exists?(t200)
-
-        abs_path = repo.join(photo[:local_path]).to_s
-        ImageScience.with_image(abs_path) do |img|
-          mkdir_p File.dirname(t200)
-          img.cropped_thumbnail(200) do |thumb|
-            thumb.save t200
-          end
-        end
       end
     end
 
@@ -57,6 +23,7 @@ module Photostat
         opt :tags, "List of tags to classify imported pictures", :type => :strings
         opt :visibility, "Choices are 'private', 'protected' and 'public'", :required => true, :type => :string
         opt :move, "Move, instead of copy (better performance, defaults to false, careful)", :type => :boolean
+        opt :dry, "Just fake it and print the resulting files", :type => :boolean
       end
 
       Trollop::die :path, "must be a valid directory" unless File.directory? opts[:path]
@@ -68,7 +35,7 @@ module Photostat
       source = File.expand_path opts[:path] 
       config = Photostat.config
 
-      files = files_in_dir(source, :match => /(.jpe?g|.JPE?G)/, :absolute? => true)
+      files = files_in_dir(source, :match => /(.jpe?g|.JPE?G|.mov|.MOV)$/, :absolute? => true)
       count, total = 0, files.length
       puts
 
@@ -82,20 +49,50 @@ module Photostat
         STDOUT.print "\r - processed: #{count} / #{total}"
         STDOUT.flush
 
-        md5 = file_md5 fpath
-        exif = EXIFR::JPEG.new fpath
-        dt = exif.date_time
+        if fpath =~ /.jpe?g/i
+          type = 'jpg'
+          exif = EXIFR::JPEG.new fpath
+          dt = exif.date_time || File.mtime(fpath)
+        else
+          type = 'mov'
+          dt = File.mtime(fpath)
+        end
 
-        local_dir  = dt.strftime("%Y-%m")
-        local_path = File.join(local_dir, dt.strftime("%Y%m%d%H%M") + "-" + md5[0,6] + ".jpg")
+        md5 = partial_file_md5 fpath
+        uid = dt.strftime("%Y%m%d%H%M%S") + "-" + md5[0,6] + "." + type
+
+        local_dir  = type == 'jpg' ? dt.strftime("%Y-%m") : 'movies'
+        local_path = File.join(local_dir, uid)
         dest_dir   = File.join(config[:repository_path], local_dir)
         dest_path  = File.join(config[:repository_path], local_path)
 
-        mkdir_p dest_dir
-        cp fpath, dest_path unless opts[:move]
-        mv fpath, dest_path if opts[:move]
-        
-        update_photo(config[:repository_path], local_path, opts, md5, exif)
+        photo = @db[:photos].where(:uid => uid).first
+        photo_id = photo ? photo[:id] : nil
+
+        unless photo || opts[:dry]
+          photo_id = @db[:photos].insert(
+            :uid => uid,
+            :type => type,
+            :local_path => local_path,
+            :visibility => opts[:visibility],
+            :created_at => dt,
+          )
+        end
+
+        opts[:tags].each do |name|
+          next if opts[:dry]
+          next unless @db[:tags].where(:name => name, :photo_id => photo_id).empty?
+          @db[:tags].insert(:name => name, :photo_id => photo_id)
+        end
+
+        next if File.exists? dest_path
+        next if File.expand_path(dest_path) == File.expand_path(fpath)
+
+        unless opts[:dry]
+          mkdir_p dest_dir
+          cp fpath, dest_path unless opts[:move]
+          mv fpath, dest_path if opts[:move]
+        end
       end
 
       if !files or files.length == 0
@@ -138,38 +135,6 @@ module Photostat
 
       puts
     end
-
-  private
-
-    def update_photo(repo, fpath, opts=nil, md5=nil, exif=nil)
-      opts ||= {}
-      md5 = nil
-
-      photo = @db[:photos].where(:local_path => fpath).first
-      photo_id = photo ? photo[:id] : nil
-
-      raise "do not use absolute paths in the database" if fpath =~ /^\//
-
-      unless photo
-        abs_fpath = File.join(repo, fpath)
-        md5 = file_md5 abs_fpath unless md5
-
-        exif = EXIFR::JPEG.new abs_fpath unless exif
-        return unless exif.date_time
-
-        photo_id = @db[:photos].insert(
-          :local_path => fpath,
-          :md5 => md5,
-          :visibility => opts[:visibility],
-          :created_at => exif.date_time
-        )
-      end        
-
-      opts[:tags].each do |name|         
-        next unless @db[:tags].where(:name => name, :photo_id => photo_id).empty?
-        @db[:tags].insert(:name => name, :photo_id => photo_id)
-      end
-    end      
 
   end
 

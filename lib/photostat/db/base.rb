@@ -5,7 +5,10 @@ module Photostat
     def self.instance
       unless @DB
         config = Photostat.config
-        path = File.join(config[:repository_path], 'system', 'photostat.db')
+        system = File.join(config[:repository_path], 'system')
+        Dir.mkdir system unless File.directory? system
+
+        path = File.join(system, 'photostat.db')
         @DB = Sequel.sqlite(path)
       end
       return @DB
