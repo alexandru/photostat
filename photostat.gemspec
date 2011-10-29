@@ -8,8 +8,8 @@ Gem::Specification.new do |s|
   s.authors     = ["Alexandru Nedelcu"]
   s.email       = ["me@alexn.org"]
   s.homepage    = "http://github.com/alexandru/photostat"
-  s.summary     = %q{Managing Photos for Hackers}
-  s.description = %q{Photostat is a collection of command-line utilities for managing photos / syncronizing with Flickr.}
+  s.summary     = %q{Managing Photos For Hackers}
+  s.description = %q{Photostat is a collection of command-line utilities for managing photos / syncronizing with Flickr - first version doesn't do much, it just helps me organize my files and upload them to Flickr}
 
   s.rubyforge_project = "photostat"
 
