@@ -48,7 +48,7 @@ module Photostat
         @db[:photos].where(:uid => obj[:uid]).update(:md5 => md5)
 
         count += 1
-        STDOUT.write("\r - processed: #{count} / #{total}")
+        STDOUT.write("\r - processed md5 hash for local files: #{count} / #{total}")
         STDOUT.flush
       end
 
@@ -61,7 +61,7 @@ module Photostat
 
       db = Photostat::DB.instance
            
-      rs = flickr.photos.search(:user_id => "me", :extras => 'machine_tags, tags', :per_page => 500)
+      rs = flickr.photos.search(:user_id => "me", :extras => 'machine_tags, tags, date_taken, date_upload', :per_page => 500)
       pages_nr = rs.pages
       page_idx = 1
 
@@ -105,8 +105,8 @@ module Photostat
           visibility = 'public' if fphoto.ispublic
 
           db[:photos].where(:md5 => md5).update(:has_flickr_upload => true, :visibility => visibility)
-
-          STDOUT.write("\r - processed #{count} of #{total}, with #{not_tagged} not tagged on flickr, #{not_local} not available locally")
+          
+          STDOUT.write("\r - processed #{count} of #{total}, with #{not_tagged} not tagged on flickr, #{not_local} not local")
           STDOUT.flush
         end  
         

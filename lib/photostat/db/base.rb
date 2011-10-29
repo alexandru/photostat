@@ -1,4 +1,6 @@
 require 'sequel'
+Sequel.datetime_class = DateTime
+
 
 module Photostat
   module DB

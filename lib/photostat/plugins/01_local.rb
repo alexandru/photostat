@@ -35,7 +35,7 @@ module Photostat
       source = File.expand_path opts[:path] 
       config = Photostat.config
 
-      files = files_in_dir(source, :match => /(.jpe?g|.JPE?G|.mov|.MOV)$/, :absolute? => true)
+      files = files_in_dir(source, :match => /(.jpe?g|.mov)$/i, :absolute? => true)
       count, total = 0, files.length
       puts
 
@@ -52,10 +52,10 @@ module Photostat
         if fpath =~ /.jpe?g/i
           type = 'jpg'
           exif = EXIFR::JPEG.new fpath
-          dt = exif.date_time || File.mtime(fpath)
+          dt = (exif.date_time || File.mtime(fpath)).getgm
         else
           type = 'mov'
-          dt = File.mtime(fpath)
+          dt = File.mtime(fpath).getgm
         end
 
         md5 = partial_file_md5 fpath
