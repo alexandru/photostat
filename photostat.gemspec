@@ -27,4 +27,5 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "flickraw"
   s.add_runtime_dependency "exifr"
   s.add_runtime_dependency "json"
+  s.add_runtime_dependency "sequel"
 end

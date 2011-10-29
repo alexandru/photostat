@@ -101,8 +101,8 @@ module Photostat
           end
 
           visibility = 'private'
-          visibility = 'protected' if fphoto.isfamily
-          visibility = 'public' if fphoto.ispublic
+          visibility = 'protected' if fphoto.isfamily && !fphoto.ispublic
+          visibility = 'public' if fphoto.ispublic && !fphoto.isfamily
 
           db[:photos].where(:md5 => md5).update(:has_flickr_upload => true, :visibility => visibility)
           
