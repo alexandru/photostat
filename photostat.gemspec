@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 $:.push File.expand_path("../lib", __FILE__)
-require "photostat/version"
+require "photostat"
 
 Gem::Specification.new do |s|
   s.name        = "photostat"
