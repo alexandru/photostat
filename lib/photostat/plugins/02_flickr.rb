@@ -1,11 +1,13 @@
 module Photostat
   class Flickr < Plugins::Base
     include OSUtils
+    include FileUtils
 
     help_text "Manages your Flickr account"
 
     exposes :config, "Configures Flickr login"
     exposes :sync, "Uploads local photos to Flickr, downloads Flickr tags / visibility info"
+    exposes :export, "Exports web page with thumbnails/links of your public Flickr photos"
 
     def activate!
       return if @activated
@@ -110,7 +112,7 @@ module Photostat
 
           db[:photos].where(:md5 => md5).update(:has_flickr_upload => true, :visibility => visibility)
           
-          STDOUT.write("\r - processed #{count} of #{total}, with #{not_tagged} not tagged on flickr, #{not_local} not local")
+          STDOUT.write("\r - reading flickr meta: #{count} of #{total}, with #{not_tagged} not tagged on flickr, #{not_local} not local")
           STDOUT.flush
         end  
         
@@ -119,7 +121,44 @@ module Photostat
         rs = flickr.photos.search(:user_id => "me", :extras => 'machine_tags', :per_page => 500, :page => page_idx)
       end      
 
-      puts("\r - processed #{count} of #{total}, with #{not_tagged} not tagged and #{not_local} not local")
+      puts("\r - reading flickr meta: #{count} of #{total}, with #{not_tagged} not tagged on flickr, #{not_local} not local")
+    end
+
+    def export
+      opts = Trollop::options do
+        opt :path, "Local path to export web page to", :required => true, :type => :string, :short => "-p"
+      end
+
+      Trollop::die :path, "must have valid base directory" unless File.directory? File.dirname(opts[:path])
+      Trollop::die :path, "directory already exists" if File.directory? opts[:path]
+
+      activate!
+      update_md5_info_on_files!      
+
+      cfg = Photostat.config
+      db = Photostat::DB.instance
+      Dir.mkdir opts[:path]
+
+      fh = File.open(File.join(opts[:path], 'index.html'), 'w')
+                 
+      rs = flickr.photos.search(:user_id => "me", :extras => 'machine_tags, tags, date_taken, date_upload', :per_page => 500, :privacy_filter => 1)
+      rs.each do |fphoto|
+        next unless fphoto.machine_tags =~ /checksum:md5=(\w+)/
+
+        md5 = $1
+        obj = db[:photos].where(:md5 => md5).first
+
+        fname = File.basename obj[:local_path]
+        src_path = File.join(cfg[:repository_path], obj[:local_path])
+        dst_path = File.join(opts[:path], fname)
+
+        cp src_path, dst_path
+        fh.write "<a href='http://www.flickr.com/photos/alex_ndc/#{fphoto.id}/in/photostream' target='_blank'>\n"
+        fh.write "    <img src='#{fname}' />\n"
+        fh.write "</a>\n"
+      end      
+
+      fh.close
     end
 
     def sync
