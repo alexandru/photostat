@@ -13,7 +13,7 @@ require "photostat/db/base"
 require "photostat/plugins/00_base"
 
 module Photostat
-  VERSION = "0.0.2"
+  VERSION = "0.0.3"
 
   def self.root
     Pathname.new File.join(File.dirname(__FILE__), 'photostat')
