@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.name        = "photostat"
   s.version     = Photostat::VERSION
   s.authors     = ["Alexandru Nedelcu"]
-  s.email       = ["me@alexn.org"]
+  s.email       = ["noreply@alexn.org"]
   s.homepage    = "http://github.com/alexandru/photostat"
   s.summary     = %q{Managing Photos For Hackers}
   s.description = %q{Photostat is a collection of command-line utilities for managing photos / syncronizing with Flickr - first version doesnt do much, it just helps me organize my files and upload them to Flickr}
